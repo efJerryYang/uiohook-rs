@@ -8,6 +8,9 @@ repository = "https://github.com/efJerryYang/uiohook-rs"
 
 [dependencies]
 libc = "0.2"
+lazy_static = "1.5"
+colored = "2.1"
+termios = "0.3"
 
 [build-dependencies]
 bindgen = "0.69"
