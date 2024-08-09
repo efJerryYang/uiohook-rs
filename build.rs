@@ -7,6 +7,8 @@ fn main() {
 
     println!("cargo:rustc-link-search={}", libuiohook_dir.display());
     println!("cargo:rustc-link-lib=uiohook");
+    println!("cargo:rustc-link-lib=X11");
+    println!("cargo:rustc-link-lib=Xtst");
     println!("cargo:rerun-if-changed=wrapper.h");
 
     let bindings = bindgen::Builder::default()
@@ -30,14 +32,27 @@ fn main() {
     let mut build = cc::Build::new();
     build
         .include(libuiohook_dir.join("include"))
-        .include(libuiohook_dir.join("src"));
+        .include(libuiohook_dir.join("src"))
+        .file(libuiohook_dir.join("src/logger.c"));
 
-    if cfg!(target_os = "windows") {
-        build.file(libuiohook_dir.join("src/windows/input_hook.c"));
+    if cfg!(target_os = "linux") {
+        build
+            .file(libuiohook_dir.join("src/x11/input_hook.c"))
+            .file(libuiohook_dir.join("src/x11/post_event.c"))
+            .file(libuiohook_dir.join("src/x11/system_properties.c"))
+            .file(libuiohook_dir.join("src/x11/input_helper.c"));
     } else if cfg!(target_os = "macos") {
-        build.file(libuiohook_dir.join("src/darwin/input_hook.c"));
-    } else if cfg!(target_os = "linux") {
-        build.file(libuiohook_dir.join("src/x11/input_hook.c"));
+        build
+            .file(libuiohook_dir.join("src/darwin/input_hook.c"))
+            .file(libuiohook_dir.join("src/darwin/post_event.c"))
+            .file(libuiohook_dir.join("src/darwin/system_properties.c"))
+            .file(libuiohook_dir.join("src/darwin/input_helper.c"));
+    } else if cfg!(target_os = "windows") {
+        build
+            .file(libuiohook_dir.join("src/windows/input_hook.c"))
+            .file(libuiohook_dir.join("src/windows/post_event.c"))
+            .file(libuiohook_dir.join("src/windows/system_properties.c"))
+            .file(libuiohook_dir.join("src/windows/input_helper.c"));
     }
 
     build.compile("uiohook");
