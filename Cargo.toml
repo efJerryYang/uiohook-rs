@@ -11,6 +11,7 @@ libc = "0.2"
 lazy_static = "1.5"
 colored = "2.1"
 termios = "0.3"
+ctrlc = "3.4"
 
 [build-dependencies]
 bindgen = "0.69"

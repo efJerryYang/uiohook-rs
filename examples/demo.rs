@@ -1,10 +1,13 @@
-use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::Arc;
-use uiohook_rs::{event_type, run, set_dispatch_proc, stop, UiohookEvent};
 use colored::*;
-use termios::{Termios, ECHO, ICANON, TCSANOW};
 use std::io::stdin;
 use std::os::unix::io::AsRawFd;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Arc;
+use std::thread;
+use std::time::Duration;
+use termios::{Termios, ECHO, ICANON, TCSANOW};
+use uiohook_rs::{run, set_dispatch_proc, stop, UiohookEvent};
+
 mod keyboard {
     use uiohook_rs::{event_type, UiohookEvent};
 
@@ -248,6 +251,7 @@ mod keyboard {
         }
     }
 }
+
 mod mouse {
     use uiohook_rs::{event_type, UiohookEvent};
 
@@ -329,7 +333,7 @@ fn main() {
     let running = Arc::new(AtomicBool::new(true));
     let r = running.clone();
 
-    // Disable terminal echo
+    // Disable terminal echo to provide a cleaner output
     let stdin_fd = stdin().as_raw_fd();
     let mut termios = Termios::from_fd(stdin_fd).unwrap();
     let original_termios = termios.clone();
@@ -337,6 +341,12 @@ fn main() {
     termios::tcsetattr(stdin_fd, TCSANOW, &termios).unwrap();
 
     println!("Press Ctrl-C to exit");
+
+    // Set up Ctrl-C handler
+    ctrlc::set_handler(move || {
+        r.store(false, Ordering::SeqCst);
+    })
+    .expect("Error setting Ctrl-C handler");
 
     set_dispatch_proc(move |event: &UiohookEvent| {
         if let Some(keyboard_event) = keyboard::handle_keyboard_event(event) {
@@ -349,19 +359,14 @@ fn main() {
                     };
 
                     let key_info = if let Some(key_name) = keyboard_event.key_name {
-                        // format!("{}", key_name.yellow())
                         format!("{:17}", key_name).yellow()
                     } else {
-                        // format!("Unknown Key (Code: {})", keyboard_event.key_code)
                         format!("Unknown Key (Code: {:<5})", keyboard_event.key_code).yellow()
                     };
 
                     println!(
                         "{} | {} | Code: {:<5} | Raw: {:<5}",
-                        event_type,
-                        key_info,
-                        keyboard_event.key_code,
-                        keyboard_event.key_raw
+                        event_type, key_info, keyboard_event.key_code, keyboard_event.key_raw
                     );
                 }
                 keyboard::KeyboardEventType::Typed => {
@@ -371,7 +376,7 @@ fn main() {
                         } else {
                             ch.to_string()
                         };
-    
+
                         println!(
                             "{} | {:<17} | Code: {:<5} | Raw: {:<5}",
                             format!("{:<8}", "TYPED").blue(),
@@ -393,7 +398,7 @@ fn main() {
                 mouse::MouseEventType::Dragged => format!("{:<8}", "DRAGGED").magenta(),
                 mouse::MouseEventType::Wheel => format!("{:<8}", "WHEEL").cyan(),
             };
-        
+
             let details = match mouse_event.event_type {
                 mouse::MouseEventType::Wheel => format!(
                     "Amount: {:<4} | Rotation: {:<4} | Direction: {:<4}",
@@ -404,7 +409,7 @@ fn main() {
                     mouse_event.button, mouse_event.clicks
                 ),
             };
-        
+
             println!(
                 "{} | {:<17} | X: {:<5} | Y: {:<5} | {}",
                 event_type,
@@ -416,18 +421,27 @@ fn main() {
         }
     });
 
-    if let Err(e) = run() {
-        eprintln!("Failed to run uiohook: {}", e);
-        return;
-    }
+    let hook_thread = thread::spawn(move || {
+        if let Err(e) = run() {
+            eprintln!("Failed to run uiohook: {}", e);
+        }
+    });
 
+    // Monitor the running flag in the main thread
     while running.load(Ordering::SeqCst) {
-        std::thread::sleep(std::time::Duration::from_millis(100));
+        thread::sleep(Duration::from_millis(100));
     }
 
+    // Stop uiohook
     if let Err(e) = stop() {
         eprintln!("Failed to stop uiohook: {}", e);
     }
 
+    // Wait for the hook thread to finish
+    hook_thread.join().unwrap();
+
+    // Restore original terminal settings
     termios::tcsetattr(stdin_fd, TCSANOW, &original_termios).unwrap();
+
+    println!("Exiting...");
 }
