@@ -13,6 +13,12 @@ fn main() {
         .header("wrapper.h")
         .clang_arg(format!("-I{}", libuiohook_dir.join("include").display()))
         .parse_callbacks(Box::new(bindgen::CargoCallbacks::new()))
+        .rustified_enum("_event_type")
+        .rustified_enum("mouse_button")
+        .derive_default(true)
+        .derive_eq(true)
+        .derive_hash(true)
+        .derive_ord(true)
         .generate()
         .expect("Unable to generate bindings");
 
