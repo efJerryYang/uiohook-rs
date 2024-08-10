@@ -46,6 +46,10 @@ fn main() {
 
 ## Running the Demo
 
+There is a simple demo program [examples/demo.rs](examples/demo.rs) with pretty-printed output of keyboard and mouse events.
+
+To run the demo:
+
 1. Clone the repo:
 
    ```sh
@@ -59,7 +63,37 @@ fn main() {
    cargo run --example demo
    ```
 
-3. Press Ctrl-C to exit.
+3. Press Ctrl-C to exit. See the output:
+
+    ```sh
+    Press Ctrl-C to exit
+    MOVED    | Mouse             | X: 802   | Y: 644   | Button: 0    | Clicks: 0   
+    PRESSED  | Caps Lock         | Code: 58    | Raw: 65509
+    RELEASED | Caps Lock         | Code: 58    | Raw: 65509
+    PRESSED  | Caps Lock         | Code: 58    | Raw: 65509
+    RELEASED | Caps Lock         | Code: 58    | Raw: 65509
+    PRESSED  | Left Shift        | Code: 42    | Raw: 65505
+    PRESSED  | B                 | Code: 48    | Raw: 66   
+    TYPED    | B                 | Code: 66    | Raw: 66   
+    RELEASED | B                 | Code: 48    | Raw: 66   
+    RELEASED | Left Shift        | Code: 42    | Raw: 65505
+    PRESSED  | H                 | Code: 35    | Raw: 104  
+    TYPED    | h                 | Code: 104   | Raw: 104  
+    RELEASED | H                 | Code: 35    | Raw: 104  
+    PRESSED  | Mouse             | X: 802   | Y: 644   | Button: 1    | Clicks: 1   
+    RELEASED | Mouse             | X: 802   | Y: 644   | Button: 1    | Clicks: 1   
+    CLICKED  | Mouse             | X: 802   | Y: 644   | Button: 1    | Clicks: 1   
+    PRESSED  | Mouse             | X: 802   | Y: 644   | Button: 1    | Clicks: 1   
+    DRAGGED  | Mouse             | X: 803   | Y: 644   | Button: 0    | Clicks: 1   
+    ... (more DRAGGED events)
+    DRAGGED  | Mouse             | X: 920   | Y: 630   | Button: 0    | Clicks: 0   
+    DRAGGED  | Mouse             | X: 921   | Y: 630   | Button: 0    | Clicks: 0   
+    RELEASED | Mouse             | X: 921   | Y: 630   | Button: 1    | Clicks: 0   
+    PRESSED  | Left Control      | Code: 29    | Raw: 65507
+    PRESSED  | C                 | Code: 46    | Raw: 99   
+    TYPED    | c                 | Code: 99    | Raw: 99   
+    Exiting...
+    ```
 
 ## License
 
