@@ -6,7 +6,7 @@ description = "uiohook-rs is a Rust wrapper for the libuiohook, providing cross-
 license = "GPL-3.0"
 repository = "https://github.com/efJerryYang/uiohook-rs"
 authors = ["Jerry Yang <efjerryyang@outlook.com>"]
-keywords = ["uiohook", "libuiohook", "keyboard", "mouse", "hook", "wheel"]
+keywords = ["uiohook", "libuiohook", "keyboard", "mouse", "wheel"]
 
 [dependencies]
 libc = "0.2"
