@@ -1,5 +1,7 @@
 # uiohook-rs
 
+[![Crates.io](https://img.shields.io/crates/v/uiohook-rs.svg)](https://crates.io/crates/uiohook-rs)
+
 `uiohook-rs` is a Rust wrapper for the [libuiohook](https://github.com/kwhat/libuiohook), providing cross-platform keyboard and mouse hooking capabilities.
 
 ## Features
