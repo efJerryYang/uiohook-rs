@@ -1,9 +1,16 @@
 use std::sync::Once;
-use std::{mem, ptr};
-use std::ffi::c_void;
+use std::{fmt, mem, ptr};
+use thiserror::Error;
+use std::ptr::addr_of_mut;
+
 // Import the generated bindings
 mod bindings;
 use bindings::*;
+
+// Add the modules for easy access
+pub mod keyboard;
+pub mod mouse;
+
 // Re-export all constants
 pub use bindings::{
     UIOHOOK_SUCCESS,
@@ -95,6 +102,16 @@ pub use bindings::{
     WHEEL_VERTICAL_DIRECTION, WHEEL_HORIZONTAL_DIRECTION,
 };
 
+// Error type
+#[derive(Error, Debug)]
+pub enum UiohookError {
+    #[error("Failed to run uiohook")]
+    RunError,
+    #[error("Failed to stop uiohook")]
+    StopError,
+    // TODO: The following C APIs may return errors to provide more information
+}
+
 // Wrapper functions for the C API
 
 /// Set the logger callback function.
@@ -106,21 +123,6 @@ pub fn set_logger_proc(logger_proc: logger_t) {
 pub fn post_event(event: &mut uiohook_event) {
     unsafe { hook_post_event(event) }
 }
-
-// /// Set the event callback function.
-// pub fn set_dispatch_proc(dispatch_proc: dispatcher_t) {
-//     unsafe { hook_set_dispatch_proc(dispatch_proc) }
-// }
-
-// /// Insert the event hook.
-// pub fn run() -> i32 {
-//     unsafe { hook_run() }
-// }
-
-// /// Withdraw the event hook.
-// pub fn stop() -> i32 {
-//     unsafe { hook_stop() }
-// }
 
 /// Retrieves an array of screen data for each available monitor.
 pub fn create_screen_info() -> Vec<screen_data> {
@@ -165,26 +167,51 @@ pub fn get_multi_click_time() -> i64 {
 // Utility functions for working with events
 
 /// Get a reference to the keyboard event data from a uiohook_event.
-pub fn get_keyboard_event(event: &uiohook_event) -> &keyboard_event_data {
-    unsafe { &event.data.keyboard }
+pub fn get_keyboard_event(event: &uiohook_event) -> Option<&keyboard_event_data> {
+    match event.type_ {
+        event_type::EVENT_KEY_PRESSED | 
+        event_type::EVENT_KEY_RELEASED | 
+        event_type::EVENT_KEY_TYPED => Some(unsafe { &event.data.keyboard }),
+        _ => None,
+    }
 }
 
 /// Get a reference to the mouse event data from a uiohook_event.
-pub fn get_mouse_event(event: &uiohook_event) -> &mouse_event_data {
-    unsafe { &event.data.mouse }
+pub fn get_mouse_event(event: &uiohook_event) -> Option<&mouse_event_data> {
+    match event.type_ {
+        event_type::EVENT_MOUSE_MOVED |
+        event_type::EVENT_MOUSE_PRESSED |
+        event_type::EVENT_MOUSE_RELEASED |
+        event_type::EVENT_MOUSE_CLICKED |
+        event_type::EVENT_MOUSE_DRAGGED => Some(unsafe { &event.data.mouse }),
+        _ => None,
+    }
 }
 
 /// Get a reference to the wheel event data from a uiohook_event.
-pub fn get_wheel_event(event: &uiohook_event) -> &mouse_wheel_event_data {
-    unsafe { &event.data.wheel }
+pub fn get_wheel_event(event: &uiohook_event) -> Option<&mouse_wheel_event_data> {
+    match event.type_ {
+        event_type::EVENT_MOUSE_WHEEL => Some(unsafe { &event.data.wheel }),
+        _ => None,
+    }
 }
 
 // TODO: Any additional utility functions or safe wrappers here
 
-static INIT: Once = Once::new();
-static mut DISPATCH_PROC: Option<Box<dyn Fn(&UiohookEvent)>> = None;
-
+#[derive(Clone)]
 pub struct UiohookEvent(uiohook_event);
+
+impl fmt::Debug for UiohookEvent {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("UiohookEvent")
+            .field("type", &self.0.type_)
+            .field("time", &self.0.time)
+            .field("mask", &self.0.mask)
+            .field("reserved", &self.0.reserved)
+            .field("data", &format_args!("<event data>"))
+            .finish()
+    }
+}
 
 impl UiohookEvent {
     pub fn event_type(&self) -> event_type {
@@ -202,10 +229,10 @@ impl UiohookEvent {
 
     pub fn mouse_event(&self) -> Option<&mouse_event_data> {
         match self.event_type() {
+            event_type::EVENT_MOUSE_MOVED |
             event_type::EVENT_MOUSE_PRESSED |
             event_type::EVENT_MOUSE_RELEASED |
             event_type::EVENT_MOUSE_CLICKED |
-            event_type::EVENT_MOUSE_MOVED |
             event_type::EVENT_MOUSE_DRAGGED => Some(unsafe { &self.0.data.mouse }),
             _ => None,
         }
@@ -219,6 +246,24 @@ impl UiohookEvent {
     }
 }
 
+impl From<uiohook_event> for UiohookEvent {
+    fn from(event: uiohook_event) -> Self {
+        UiohookEvent(event)
+    }
+}
+
+static INIT: Once = Once::new();
+static mut DISPATCH_PROC: Option<Box<dyn Fn(&UiohookEvent)>> = None;
+
+unsafe extern "C" fn dispatch_proc_wrapper(event: *mut uiohook_event) {
+    // Use addr_of_mut! to get a raw pointer to DISPATCH_PROC
+    let dispatch_proc_ptr = addr_of_mut!(DISPATCH_PROC);
+    if let Some(dispatch_proc) = (*dispatch_proc_ptr).as_ref() {
+        let safe_event = UiohookEvent(*event);
+        dispatch_proc(&safe_event);
+    }
+}
+
 pub fn set_dispatch_proc<F>(callback: F)
 where
     F: Fn(&UiohookEvent) + 'static,
@@ -229,13 +274,6 @@ where
             hook_set_dispatch_proc(Some(dispatch_proc_wrapper));
         }
     });
-}
-
-unsafe extern "C" fn dispatch_proc_wrapper(event: *mut uiohook_event) {
-    if let Some(dispatch_proc) = &DISPATCH_PROC {
-        let safe_event = UiohookEvent(*event);
-        dispatch_proc(&safe_event);
-    }
 }
 
 pub fn run() -> Result<(), &'static str> {

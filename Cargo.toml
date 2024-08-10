@@ -12,7 +12,9 @@ lazy_static = "1.5"
 colored = "2.1"
 termios = "0.3"
 ctrlc = "3.4"
+thiserror = "1.0"
 
 [build-dependencies]
 bindgen = "0.69"
 cc = "1.0"
+pkg-config = "0.3"
