@@ -1,5 +1,6 @@
 use std::sync::Once;
-use std::{fmt, mem, ptr};
+// use std::{fmt, mem, ptr};
+use std::fmt;
 use thiserror::Error;
 use std::ptr::addr_of_mut;
 

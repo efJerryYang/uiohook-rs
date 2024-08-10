@@ -45,7 +45,11 @@ fn main() {
         _ => panic!("Unsupported operating system"),
     }
 
-    build.compile("uiohook");
+    build
+        .flag_if_supported("-Wno-unused-parameter")
+        .flag_if_supported("-Wno-sign-compare")
+        .flag_if_supported("-Wno-pragmas")
+        .compile("uiohook");
 
     let bindings = bindgen::Builder::default()
         .header("wrapper.h")
