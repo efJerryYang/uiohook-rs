@@ -1,4 +1,4 @@
-use crate::bindings;
+use crate::{bindings, KeyboardEventType, MouseEventType};
 use crate::error::UiohookError;
 use crate::keyboard::KeyboardEvent;
 use crate::mouse::MouseEvent;
@@ -209,11 +209,27 @@ impl UiohookEvent {
             EVENT_HOOK_ENABLED => UiohookEvent::HookEnabled,
             EVENT_HOOK_DISABLED => UiohookEvent::HookDisabled,
             EVENT_KEY_PRESSED | EVENT_KEY_RELEASED | EVENT_KEY_TYPED => {
-                UiohookEvent::Keyboard(KeyboardEvent::from(unsafe { &event.data.keyboard }))
+                let mut ke = KeyboardEvent::from(unsafe { &event.data.keyboard });
+                ke.event_type = match event.type_ {
+                    EVENT_KEY_PRESSED => KeyboardEventType::Pressed,
+                    EVENT_KEY_RELEASED => KeyboardEventType::Released,
+                    EVENT_KEY_TYPED => KeyboardEventType::Typed,
+                    _ => unreachable!(),
+                };
+                UiohookEvent::Keyboard(ke)
             }
             EVENT_MOUSE_CLICKED | EVENT_MOUSE_PRESSED | EVENT_MOUSE_RELEASED
             | EVENT_MOUSE_MOVED | EVENT_MOUSE_DRAGGED => {
-                UiohookEvent::Mouse(MouseEvent::from(unsafe { &event.data.mouse }))
+                let mut me = MouseEvent::from(unsafe { &event.data.mouse });
+                me.event_type = match event.type_ {
+                    EVENT_MOUSE_CLICKED => MouseEventType::Clicked,
+                    EVENT_MOUSE_PRESSED => MouseEventType::Pressed,
+                    EVENT_MOUSE_RELEASED => MouseEventType::Released,
+                    EVENT_MOUSE_MOVED => MouseEventType::Moved,
+                    EVENT_MOUSE_DRAGGED => MouseEventType::Dragged,
+                    _ => unreachable!(),
+                };
+                UiohookEvent::Mouse(me)
             }
             EVENT_MOUSE_WHEEL => {
                 UiohookEvent::Wheel(WheelEvent::from(unsafe { &event.data.wheel }))
@@ -221,6 +237,7 @@ impl UiohookEvent {
             _ => panic!("Unknown event type: {:?}", event.type_),
         }
     }
+
 
     fn to_raw_event(&self) -> bindings::uiohook_event {
         use bindings::event_type::*;

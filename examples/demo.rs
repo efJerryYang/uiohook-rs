@@ -6,10 +6,10 @@ use std::sync::Arc;
 use std::thread;
 use std::time::Duration;
 use termios::{Termios, ECHO, ICANON, TCSANOW};
-use uiohook_rs::{Uiohook, EventHandler, UiohookEvent};
-use uiohook_rs::keyboard::{KeyboardEvent, KeyboardEventType, KeyCode};
-use uiohook_rs::mouse::{MouseEvent, MouseEventType, MouseButton};
+use uiohook_rs::keyboard::{KeyboardEvent, KeyboardEventType};
+use uiohook_rs::mouse::{MouseEvent, MouseEventType};
 use uiohook_rs::wheel::WheelEvent;
+use uiohook_rs::{EventHandler, Uiohook, UiohookEvent};
 
 struct DemoEventHandler {
     running: Arc<AtomicBool>,
@@ -51,11 +51,8 @@ impl DemoEventHandler {
                 let key_info = format!("{:?}", keyboard_event.key_code).yellow();
 
                 println!(
-                    "{} | {} | Code: {:<5} | Raw: {:<5}",
-                    event_type,
-                    key_info,
-                    keyboard_event.key_code as u16,
-                    keyboard_event.raw_code
+                    "{} | {:<17} | Code: {:<5} | Raw: {:<5}",
+                    event_type, key_info, keyboard_event.key_code as u16, keyboard_event.raw_code
                 );
             }
             KeyboardEventType::Typed => {
@@ -88,7 +85,7 @@ impl DemoEventHandler {
         };
 
         let details = format!(
-            "Button: {:<4} | Clicks: {:<4}",
+            "Button: {:<8} | Clicks: {:<4}",
             format!("{:?}", mouse_event.button),
             mouse_event.clicks
         );
@@ -104,10 +101,10 @@ impl DemoEventHandler {
     }
 
     fn handle_wheel_event(&self, wheel_event: &WheelEvent) {
-        let event_type = format!("{:<8}", "WHEEL").cyan();
+        let event_type = format!("{:<8}", "SCROLL").cyan();
 
         let details = format!(
-            "Amount: {:<4} | Rotation: {:<4} | Direction: {:<4}",
+            "Amount: {:<4} | Rotation: {:<4} | Direction: {:<9}",
             wheel_event.amount,
             wheel_event.rotation,
             if wheel_event.direction == uiohook_rs::wheel::WHEEL_VERTICAL_DIRECTION {
