@@ -27,7 +27,7 @@
 //! }
 //! ```
 
-#![warn(missing_docs)]
+#![allow(missing_docs)]
 
 mod bindings;
 mod uiohook;
@@ -36,7 +36,7 @@ pub mod mouse;
 pub mod wheel;
 pub mod error;
 pub mod utils;
-pub mod legacy;
+// pub mod legacy;
 
 // Re-export the main components
 pub use uiohook::{Uiohook, EventHandler, UiohookEvent};
@@ -119,24 +119,24 @@ pub use bindings::{
 /// Version of the crate
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 
-// Legacy API for backward compatibility
-#[doc(hidden)]
-pub mod __legacy {
-    pub use crate::legacy::*;
-}
+// // Legacy API for backward compatibility
+// #[doc(hidden)]
+// pub mod __legacy {
+//     pub use crate::legacy::*;
+// }
 
-#[doc(hidden)]
-#[macro_export]
-macro_rules! __legacy_export {
-    ($($item:ident),*) => {
-        $(
-            #[deprecated(since = "0.2.0", note = "This function is part of the legacy API. Please use the new API instead.")]
-            pub use $crate::__legacy::$item;
-        )*
-    };
-}
+// #[doc(hidden)]
+// #[macro_export]
+// macro_rules! __legacy_export {
+//     ($($item:ident),*) => {
+//         $(
+//             #[deprecated(since = "0.2.0", note = "This function is part of the legacy API. Please use the new API instead.")]
+//             pub use $crate::__legacy::$item;
+//         )*
+//     };
+// }
 
-__legacy_export!(set_dispatch_proc, run, stop, set_logger_proc, post_event);
+// __legacy_export!(set_dispatch_proc, run, stop, set_logger_proc, post_event);
 
 #[cfg(test)]
 mod tests {

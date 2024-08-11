@@ -1,6 +1,5 @@
 use std::env;
 use std::path::PathBuf;
-use pkg_config;
 
 fn main() {
     let root = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap());
@@ -20,8 +19,12 @@ fn main() {
 
     match target_os.as_str() {
         "linux" => {
+            // Find and link X11 libraries
             pkg_config::probe_library("x11").unwrap();
+            // pkg_config::probe_library("xext").unwrap();
+            // pkg_config::probe_library("xi").unwrap();
             pkg_config::probe_library("xtst").unwrap();
+            // pkg_config::probe_library("xkbcommon").unwrap();
             build
                 .file(libuiohook_dir.join("src/x11/input_hook.c"))
                 .file(libuiohook_dir.join("src/x11/post_event.c"))

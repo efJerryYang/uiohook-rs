@@ -3,7 +3,7 @@ use crate::error::UiohookError;
 use crate::keyboard::KeyboardEvent;
 use crate::mouse::MouseEvent;
 use crate::wheel::WheelEvent;
-use std::ptr::addr_of_mut;
+// use std::ptr::addr_of_mut;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex, Once};
 
@@ -209,33 +209,46 @@ impl UiohookEvent {
             EVENT_HOOK_ENABLED => UiohookEvent::HookEnabled,
             EVENT_HOOK_DISABLED => UiohookEvent::HookDisabled,
             EVENT_KEY_PRESSED | EVENT_KEY_RELEASED | EVENT_KEY_TYPED => {
-                let mut ke = KeyboardEvent::from(unsafe { &event.data.keyboard });
-                ke.event_type = match event.type_ {
-                    EVENT_KEY_PRESSED => KeyboardEventType::Pressed,
-                    EVENT_KEY_RELEASED => KeyboardEventType::Released,
-                    EVENT_KEY_TYPED => KeyboardEventType::Typed,
-                    _ => unreachable!(),
-                };
-                UiohookEvent::Keyboard(ke)
+                UiohookEvent::Keyboard(Self::create_keyboard_event(event))
             }
             EVENT_MOUSE_CLICKED | EVENT_MOUSE_PRESSED | EVENT_MOUSE_RELEASED
             | EVENT_MOUSE_MOVED | EVENT_MOUSE_DRAGGED => {
-                let mut me = MouseEvent::from(unsafe { &event.data.mouse });
-                me.event_type = match event.type_ {
-                    EVENT_MOUSE_CLICKED => MouseEventType::Clicked,
-                    EVENT_MOUSE_PRESSED => MouseEventType::Pressed,
-                    EVENT_MOUSE_RELEASED => MouseEventType::Released,
-                    EVENT_MOUSE_MOVED => MouseEventType::Moved,
-                    EVENT_MOUSE_DRAGGED => MouseEventType::Dragged,
-                    _ => unreachable!(),
-                };
-                UiohookEvent::Mouse(me)
+                UiohookEvent::Mouse(Self::create_mouse_event(event))
             }
             EVENT_MOUSE_WHEEL => {
-                UiohookEvent::Wheel(WheelEvent::from(unsafe { &event.data.wheel }))
+                UiohookEvent::Wheel(Self::create_wheel_event(event))
             }
-            _ => panic!("Unknown event type: {:?}", event.type_),
         }
+    }
+
+    fn create_keyboard_event(event: &bindings::uiohook_event) -> KeyboardEvent {
+        use bindings::event_type::*;
+        let mut ke = KeyboardEvent::from(unsafe { &event.data.keyboard });
+        ke.event_type = match event.type_ {
+            EVENT_KEY_PRESSED => KeyboardEventType::Pressed,
+            EVENT_KEY_RELEASED => KeyboardEventType::Released,
+            EVENT_KEY_TYPED => KeyboardEventType::Typed,
+            _ => unreachable!(),
+        };
+        ke
+    }
+
+    fn create_mouse_event(event: &bindings::uiohook_event) -> MouseEvent {
+        use bindings::event_type::*;
+        let mut me = MouseEvent::from(unsafe { &event.data.mouse });
+        me.event_type = match event.type_ {
+            EVENT_MOUSE_CLICKED => MouseEventType::Clicked,
+            EVENT_MOUSE_PRESSED => MouseEventType::Pressed,
+            EVENT_MOUSE_RELEASED => MouseEventType::Released,
+            EVENT_MOUSE_MOVED => MouseEventType::Moved,
+            EVENT_MOUSE_DRAGGED => MouseEventType::Dragged,
+            _ => unreachable!(),
+        };
+        me
+    }
+
+    fn create_wheel_event(event: &bindings::uiohook_event) -> WheelEvent {
+        WheelEvent::from(unsafe { &event.data.wheel })
     }
 
 
@@ -252,9 +265,9 @@ impl UiohookEvent {
             }
             UiohookEvent::Keyboard(ke) => {
                 raw_event.type_ = match ke.event_type {
-                    crate::keyboard::KeyboardEventType::Pressed => EVENT_KEY_PRESSED,
-                    crate::keyboard::KeyboardEventType::Released => EVENT_KEY_RELEASED,
-                    crate::keyboard::KeyboardEventType::Typed => EVENT_KEY_TYPED,
+                    KeyboardEventType::Pressed => EVENT_KEY_PRESSED,
+                    KeyboardEventType::Released => EVENT_KEY_RELEASED,
+                    KeyboardEventType::Typed => EVENT_KEY_TYPED,
                 };
                 raw_event.data.keyboard.keycode = ke.key_code as u16;
                 raw_event.data.keyboard.rawcode = ke.raw_code;
@@ -262,11 +275,11 @@ impl UiohookEvent {
             }
             UiohookEvent::Mouse(me) => {
                 raw_event.type_ = match me.event_type {
-                    crate::mouse::MouseEventType::Moved => EVENT_MOUSE_MOVED,
-                    crate::mouse::MouseEventType::Pressed => EVENT_MOUSE_PRESSED,
-                    crate::mouse::MouseEventType::Released => EVENT_MOUSE_RELEASED,
-                    crate::mouse::MouseEventType::Clicked => EVENT_MOUSE_CLICKED,
-                    crate::mouse::MouseEventType::Dragged => EVENT_MOUSE_DRAGGED,
+                    MouseEventType::Moved => EVENT_MOUSE_MOVED,
+                    MouseEventType::Pressed => EVENT_MOUSE_PRESSED,
+                    MouseEventType::Released => EVENT_MOUSE_RELEASED,
+                    MouseEventType::Clicked => EVENT_MOUSE_CLICKED,
+                    MouseEventType::Dragged => EVENT_MOUSE_DRAGGED,
                 };
                 raw_event.data.mouse.button = me.button as u16;
                 raw_event.data.mouse.clicks = me.clicks;
