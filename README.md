@@ -26,27 +26,35 @@ uiohook-rs = "0.1.0"
 Here's a basic example of how to use `uiohook-rs`:
 
 ```rust
-use uiohook_rs::{run, set_dispatch_proc, stop, UiohookEvent};
+use uiohook_rs::{EventHandler, Uiohook, UiohookEvent};
+
+struct MyEventHandler;
+
+impl EventHandler for MyEventHandler {
+    fn handle_event(&self, event: &UiohookEvent) {
+        println!("Event: {:?}", event);
+    }
+}
 
 fn main() {
-    set_dispatch_proc(|event: &UiohookEvent| {
-        println!("Event: {:?}", event);
-    });
+    let event_handler = MyEventHandler;
+    let uiohook = Uiohook::new(event_handler);
 
-    if let Err(e) = run() {
+    if let Err(e) = uiohook.run() {
         eprintln!("Error: {}", e);
     }
-
-    // To stop the hook:
-    // if let Err(e) = stop() {
-    //     eprintln!("Error stopping: {}", e);
+    
+    // Stop the hook
+    // if let Err(e) = Uiohook::stop() {
+    //     eprintln!("Error: {}", e);
     // }
 }
+
 ```
 
 ## Running the Demo
 
-There is a simple demo program [examples/demo.rs](examples/demo.rs) with pretty-printed output of keyboard and mouse events.
+There are several example programs available under the `examples/` directory, including demos for general event handling (`demo.rs`), pretty-printed output (`pretty_demo.rs`), and specific handlers for keyboard, mouse, and wheel events. Except for the `pretty_demo.rs`, all other examples use the minimal code to demonstrate the hook functionality.
 
 To run the demo:
 
@@ -65,7 +73,7 @@ To run the demo:
 
 3. Press Ctrl-C to exit. See the output:
 
-    ```sh
+    ```txt
     Press Ctrl-C to exit
     MOVED    | Mouse             | X: 802   | Y: 644   | Button: 0    | Clicks: 0   
     PRESSED  | Caps Lock         | Code: 58    | Raw: 65509
