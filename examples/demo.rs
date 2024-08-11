@@ -1,21 +1,11 @@
-use colored::*;
-use std::io::stdin;
-use std::os::unix::io::AsRawFd;
-use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::Arc;
-use std::thread;
-use std::time::Duration;
-use termios::{Termios, ECHO, ICANON, TCSANOW};
 use uiohook_rs::hook::keyboard::{KeyboardEvent, KeyboardEventType};
 use uiohook_rs::hook::mouse::{MouseEvent, MouseEventType};
 use uiohook_rs::hook::wheel::WheelEvent;
 use uiohook_rs::{EventHandler, Uiohook, UiohookEvent};
 
-struct DemoEventHandler {
-    running: Arc<AtomicBool>,
-}
+struct DemoHandler;
 
-impl EventHandler for DemoEventHandler {
+impl EventHandler for DemoHandler {
     fn handle_event(&self, event: &UiohookEvent) {
         match event {
             UiohookEvent::Keyboard(keyboard_event) => {
@@ -27,32 +17,29 @@ impl EventHandler for DemoEventHandler {
             UiohookEvent::Wheel(wheel_event) => {
                 self.handle_wheel_event(wheel_event);
             }
-            UiohookEvent::HookEnabled => {
-                println!("{}", "Hook Enabled".green());
-            }
-            UiohookEvent::HookDisabled => {
-                println!("{}", "Hook Disabled".red());
-                self.running.store(false, Ordering::SeqCst);
-            }
+            _ => {}
         }
     }
 }
 
-impl DemoEventHandler {
+impl DemoHandler {
     fn handle_keyboard_event(&self, keyboard_event: &KeyboardEvent) {
         match keyboard_event.event_type {
             KeyboardEventType::Pressed | KeyboardEventType::Released => {
                 let event_type = match keyboard_event.event_type {
-                    KeyboardEventType::Pressed => format!("{:<8}", "PRESSED").green(),
-                    KeyboardEventType::Released => format!("{:<8}", "RELEASED").red(),
+                    KeyboardEventType::Pressed => "PRESSED",
+                    KeyboardEventType::Released => "RELEASED",
                     _ => unreachable!(),
                 };
 
-                let key_info = format!("{:?}", keyboard_event.key_code).yellow();
+                let key_info = format!("{:?}", keyboard_event.key_code);
 
                 println!(
-                    "{} | {:<17} | Code: {:<5} | Raw: {:<5}",
-                    event_type, key_info, keyboard_event.key_code as u16, keyboard_event.raw_code
+                    "{:<8} | {:<17} | Code: {:<5} | Raw: {:<5}",
+                    event_type,
+                    key_info,
+                    keyboard_event.key_code as u16,
+                    keyboard_event.raw_code
                 );
             }
             KeyboardEventType::Typed => {
@@ -64,9 +51,9 @@ impl DemoEventHandler {
                     };
 
                     println!(
-                        "{} | {:<17} | Code: {:<5} | Raw: {:<5}",
-                        format!("{:<8}", "TYPED").blue(),
-                        char_display.cyan(),
+                        "{:<8} | {:<17} | Code: {:<5} | Raw: {:<5}",
+                        "TYPED",
+                        char_display,
                         ch as u32,
                         keyboard_event.raw_code
                     );
@@ -77,11 +64,11 @@ impl DemoEventHandler {
 
     fn handle_mouse_event(&self, mouse_event: &MouseEvent) {
         let event_type = match mouse_event.event_type {
-            MouseEventType::Moved => format!("{:<8}", "MOVED").yellow(),
-            MouseEventType::Pressed => format!("{:<8}", "PRESSED").green(),
-            MouseEventType::Released => format!("{:<8}", "RELEASED").red(),
-            MouseEventType::Clicked => format!("{:<8}", "CLICKED").blue(),
-            MouseEventType::Dragged => format!("{:<8}", "DRAGGED").magenta(),
+            MouseEventType::Moved => "MOVED",
+            MouseEventType::Pressed => "PRESSED",
+            MouseEventType::Released => "RELEASED",
+            MouseEventType::Clicked => "CLICKED",
+            MouseEventType::Dragged => "DRAGGED",
         };
 
         let details = format!(
@@ -91,9 +78,8 @@ impl DemoEventHandler {
         );
 
         println!(
-            "{} | {:<17} | X: {:<5} | Y: {:<5} | {}",
+            "{:<8} | X: {:<5} | Y: {:<5} | {}",
             event_type,
-            "Mouse".yellow(),
             mouse_event.x,
             mouse_event.y,
             details
@@ -101,7 +87,7 @@ impl DemoEventHandler {
     }
 
     fn handle_wheel_event(&self, wheel_event: &WheelEvent) {
-        let event_type = format!("{:<8}", "SCROLL").cyan();
+        let event_type = "SCROLL";
 
         let details = format!(
             "Amount: {:<4} | Rotation: {:<4} | Direction: {:<9}",
@@ -115,9 +101,8 @@ impl DemoEventHandler {
         );
 
         println!(
-            "{} | {:<17} | X: {:<5} | Y: {:<5} | {}",
+            "{:<8} | X: {:<5} | Y: {:<5} | {}",
             event_type,
-            "Mouse Wheel".yellow(),
             wheel_event.x,
             wheel_event.y,
             details
@@ -126,51 +111,15 @@ impl DemoEventHandler {
 }
 
 fn main() {
-    let running = Arc::new(AtomicBool::new(true));
-    let r = running.clone();
+    println!("Running... Press Ctrl-C to exit");
 
-    // Disable terminal echo to provide a cleaner output
-    let stdin_fd = stdin().as_raw_fd();
-    let mut termios = Termios::from_fd(stdin_fd).unwrap();
-    let original_termios = termios.clone();
-    termios.c_lflag &= !(ECHO | ICANON);
-    termios::tcsetattr(stdin_fd, TCSANOW, &termios).unwrap();
-
-    println!("Press Ctrl-C to exit");
-
-    // Set up Ctrl-C handler
-    ctrlc::set_handler(move || {
-        r.store(false, Ordering::SeqCst);
-    })
-    .expect("Error setting Ctrl-C handler");
-
-    let event_handler = DemoEventHandler {
-        running: running.clone(),
-    };
+    let event_handler = DemoHandler;
 
     let uiohook = Uiohook::new(event_handler);
 
-    let hook_thread = thread::spawn(move || {
-        if let Err(e) = uiohook.run() {
-            eprintln!("Failed to run uiohook: {}", e);
-        }
-    });
-
-    // Monitor the running flag in the main thread
-    while running.load(Ordering::SeqCst) {
-        thread::sleep(Duration::from_millis(100));
+    if let Err(e) = uiohook.run() {
+        eprintln!("Failed to run uiohook: {}", e);
     }
-
-    // Stop uiohook
-    if let Err(e) = Uiohook::stop() {
-        eprintln!("Failed to stop uiohook: {}", e);
-    }
-
-    // Wait for the hook thread to finish
-    hook_thread.join().unwrap();
-
-    // Restore original terminal settings
-    termios::tcsetattr(stdin_fd, TCSANOW, &original_termios).unwrap();
 
     println!("Exiting...");
 }
