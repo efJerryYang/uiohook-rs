@@ -1,11 +1,15 @@
 use crate::{bindings, KeyboardEventType, MouseEventType};
 use crate::error::UiohookError;
-use crate::keyboard::KeyboardEvent;
-use crate::mouse::MouseEvent;
-use crate::wheel::WheelEvent;
+use self::keyboard::KeyboardEvent;
+use self::mouse::MouseEvent;
+use self::wheel::WheelEvent;
 // use std::ptr::addr_of_mut;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex, Once};
+
+pub mod keyboard;
+pub mod mouse;
+pub mod wheel;
 
 static INIT: Once = Once::new();
 static mut GLOBAL_HANDLER: Option<Arc<Mutex<dyn EventHandler>>> = None;
@@ -352,8 +356,8 @@ mod tests {
 
         // Post a test event
         let test_event = UiohookEvent::Keyboard(KeyboardEvent {
-            event_type: crate::keyboard::KeyboardEventType::Pressed,
-            key_code: crate::keyboard::KeyCode::A,
+            event_type: self::keyboard::KeyboardEventType::Pressed,
+            key_code: self::keyboard::KeyCode::A,
             raw_code: 0x41,
             key_char: Some('A'),
         });

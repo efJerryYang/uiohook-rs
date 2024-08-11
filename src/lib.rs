@@ -30,20 +30,17 @@
 #![allow(missing_docs)]
 
 mod bindings;
-mod uiohook;
-pub mod keyboard;
-pub mod mouse;
-pub mod wheel;
+pub mod hook;
 pub mod error;
 pub mod utils;
 // pub mod legacy;
 
 // Re-export the main components
-pub use uiohook::{Uiohook, EventHandler, UiohookEvent};
+pub use hook::{Uiohook, EventHandler, UiohookEvent};
+pub use hook::keyboard::{KeyboardEvent, KeyboardEventType, key_tap, key_toggle};
+pub use hook::mouse::{MouseEvent, MouseEventType};
+pub use hook::wheel::WheelEvent;
 pub use error::UiohookError;
-pub use keyboard::{KeyboardEvent, KeyboardEventType, key_tap, key_toggle};
-pub use mouse::{MouseEvent, MouseEventType};
-pub use wheel::WheelEvent;
 
 // Re-export utility functions
 pub use utils::{

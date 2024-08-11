@@ -6,9 +6,9 @@ use std::sync::Arc;
 use std::thread;
 use std::time::Duration;
 use termios::{Termios, ECHO, ICANON, TCSANOW};
-use uiohook_rs::keyboard::{KeyboardEvent, KeyboardEventType};
-use uiohook_rs::mouse::{MouseEvent, MouseEventType};
-use uiohook_rs::wheel::WheelEvent;
+use uiohook_rs::hook::keyboard::{KeyboardEvent, KeyboardEventType};
+use uiohook_rs::hook::mouse::{MouseEvent, MouseEventType};
+use uiohook_rs::hook::wheel::WheelEvent;
 use uiohook_rs::{EventHandler, Uiohook, UiohookEvent};
 
 struct DemoEventHandler {
@@ -107,7 +107,7 @@ impl DemoEventHandler {
             "Amount: {:<4} | Rotation: {:<4} | Direction: {:<9}",
             wheel_event.amount,
             wheel_event.rotation,
-            if wheel_event.direction == uiohook_rs::wheel::WHEEL_VERTICAL_DIRECTION {
+            if wheel_event.direction == uiohook_rs::hook::wheel::WHEEL_VERTICAL_DIRECTION {
                 "Vertical"
             } else {
                 "Horizontal"
