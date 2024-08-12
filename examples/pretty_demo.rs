@@ -148,10 +148,11 @@ fn main() {
         running: running.clone(),
     };
 
-    let uiohook = Uiohook::new(event_handler);
+    let uiohook = Arc::new(Uiohook::new(event_handler));
+    let uiohook_clone = Arc::clone(&uiohook);
 
     let hook_thread = thread::spawn(move || {
-        if let Err(e) = uiohook.run() {
+        if let Err(e) = uiohook_clone.run() {
             eprintln!("Failed to run uiohook: {}", e);
         }
     });
@@ -162,7 +163,7 @@ fn main() {
     }
 
     // Stop uiohook
-    if let Err(e) = Uiohook::stop() {
+    if let Err(e) = uiohook.stop() {
         eprintln!("Failed to stop uiohook: {}", e);
     }
 

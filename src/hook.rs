@@ -6,6 +6,7 @@ use self::wheel::WheelEvent;
 // use std::ptr::addr_of_mut;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex, Once};
+use std::thread;
 
 pub mod keyboard;
 pub mod mouse;
@@ -13,7 +14,6 @@ pub mod wheel;
 
 static INIT: Once = Once::new();
 static mut GLOBAL_HANDLER: Option<Arc<Mutex<dyn EventHandler>>> = None;
-static RUNNING: AtomicBool = AtomicBool::new(false);
 
 /// Trait for handling uiohook events.
 pub trait EventHandler: Send + Sync {
@@ -24,7 +24,10 @@ pub trait EventHandler: Send + Sync {
 /// Main struct for interacting with uiohook.
 pub struct Uiohook {
     event_handler: Arc<Mutex<dyn EventHandler>>,
+    running: Arc<AtomicBool>,
+    thread_handle: Mutex<Option<thread::JoinHandle<()>>>,
 }
+
 
 impl Uiohook {
     /// Create a new Uiohook instance with the given event handler.
@@ -51,6 +54,8 @@ impl Uiohook {
     pub fn new<H: EventHandler + 'static>(event_handler: H) -> Self {
         Self {
             event_handler: Arc::new(Mutex::new(event_handler)),
+            running: Arc::new(AtomicBool::new(false)),
+            thread_handle: Mutex::new(None),
         }
     }
 
@@ -79,7 +84,7 @@ impl Uiohook {
     /// hook.run().expect("Failed to run uiohook");
     /// ```
     pub fn run(&self) -> Result<(), UiohookError> {
-        if RUNNING.swap(true, Ordering::SeqCst) {
+        if self.running.swap(true, Ordering::SeqCst) {
             return Err(UiohookError::AlreadyRunning);
         }
 
@@ -90,14 +95,20 @@ impl Uiohook {
             }
         });
 
-        let result = unsafe { bindings::hook_run() };
+        let running = self.running.clone();
+        let thread = thread::spawn(move || {
+            while running.load(Ordering::SeqCst) {
+                let result = unsafe { bindings::hook_run() };
+                if result != bindings::UIOHOOK_SUCCESS as i32 {
+                    eprintln!("Error in hook_run: {:?}", UiohookError::from(result as u32));
+                    break;
+                }
+            }
+        });
 
-        if result == bindings::UIOHOOK_SUCCESS as i32 {
-            Ok(())
-        } else {
-            RUNNING.store(false, Ordering::SeqCst);
-            Err(UiohookError::from(result as u32))
-        }
+        *self.thread_handle.lock().unwrap() = Some(thread);
+
+        Ok(())
     }
 
     /// Stop the uiohook event loop.
@@ -129,15 +140,19 @@ impl Uiohook {
     ///
     /// thread::sleep(Duration::from_secs(5));
     ///
-    /// Uiohook::stop().expect("Failed to stop uiohook");
+    /// hook.stop().expect("Failed to stop uiohook");
     /// hook_thread.join().expect("Failed to join hook thread");
     /// ```
-    pub fn stop() -> Result<(), UiohookError> {
-        if !RUNNING.swap(false, Ordering::SeqCst) {
+    pub fn stop(&self) -> Result<(), UiohookError> {
+        if !self.running.swap(false, Ordering::SeqCst) {
             return Err(UiohookError::NotRunning);
         }
 
         let result = unsafe { bindings::hook_stop() };
+
+        if let Some(thread) = self.thread_handle.lock().unwrap().take() {
+            thread.join().map_err(|_| UiohookError::Failure)?;
+        }
 
         if result == bindings::UIOHOOK_SUCCESS as i32 {
             Ok(())
@@ -372,7 +387,7 @@ mod tests {
         assert!(matches!(received_event, UiohookEvent::Keyboard(_)));
 
         // Stop the hook
-        Uiohook::stop().expect("Failed to stop uiohook");
+        hook.stop().expect("Failed to stop uiohook");
 
         // Wait for the hook thread to finish
         hook_thread.join().expect("Failed to join hook thread");
