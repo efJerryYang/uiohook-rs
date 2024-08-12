@@ -1,3 +1,7 @@
+//! Error types for uiohook-rs.
+//!
+//! This module defines the error types used throughout the uiohook-rs crate.
+
 use thiserror::Error;
 use std::result;
 

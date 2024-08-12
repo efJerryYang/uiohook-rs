@@ -6,26 +6,43 @@
 //! # Example
 //!
 //! ```rust,no_run
-//! use uiohook_rs::{Uiohook, EventHandler, UiohookEvent};
+//! use std::sync::atomic::{AtomicI32, Ordering};
+//! use std::sync::Arc;
+//! use std::thread;
+//! use std::time::Duration;
+//! use uiohook_rs::{EventHandler, Uiohook, UiohookEvent};
 //!
-//! struct MyEventHandler;
+//! struct MyEventHandler {
+//!     event_count: Arc<AtomicI32>,
+//! }
 //!
 //! impl EventHandler for MyEventHandler {
 //!     fn handle_event(&self, event: &UiohookEvent) {
-//!         println!("Received event: {:?}", event);
+//!         println!("Event: {:?}", event);
+//!         self.event_count.fetch_add(1, Ordering::SeqCst);
 //!     }
 //! }
 //!
-//! fn main() -> Result<(), Box<dyn std::error::Error>> {
-//!     let handler = MyEventHandler;
-//!     let hook = Uiohook::new(handler);
+//! fn main() {
+//!     let event_count = Arc::new(AtomicI32::new(0));
+//!     let event_handler = MyEventHandler {
+//!         event_count: event_count.clone(),
+//!     };
+//!     let uiohook = Uiohook::new(event_handler);
 //!
-//!     println!("Starting uiohook...");
-//!     hook.run()?;
+//!     if let Err(e) = uiohook.run() {
+//!         eprintln!("Failed to run uiohook: {}", e);
+//!         return;
+//!     }
 //!
-//!     Ok(())
+//!     thread::sleep(Duration::from_secs(5));
+//!
+//!     if let Err(e) = uiohook.stop() {
+//!         eprintln!("Failed to stop uiohook: {}", e);
+//!     }
 //! }
 //! ```
+
 
 #![allow(missing_docs)]
 
@@ -116,25 +133,6 @@ pub use bindings::{
 /// Version of the crate
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 
-// // Legacy API for backward compatibility
-// #[doc(hidden)]
-// pub mod __legacy {
-//     pub use crate::legacy::*;
-// }
-
-// #[doc(hidden)]
-// #[macro_export]
-// macro_rules! __legacy_export {
-//     ($($item:ident),*) => {
-//         $(
-//             #[deprecated(since = "0.2.0", note = "This function is part of the legacy API. Please use the new API instead.")]
-//             pub use $crate::__legacy::$item;
-//         )*
-//     };
-// }
-
-// __legacy_export!(set_dispatch_proc, run, stop, set_logger_proc, post_event);
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -143,6 +141,4 @@ mod tests {
     fn test_version() {
         assert!(!VERSION.is_empty());
     }
-
-    // Add more tests as needed
 }

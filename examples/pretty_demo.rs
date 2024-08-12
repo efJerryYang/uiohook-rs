@@ -148,14 +148,12 @@ fn main() {
         running: running.clone(),
     };
 
-    let uiohook = Arc::new(Uiohook::new(event_handler));
-    let uiohook_clone = Arc::clone(&uiohook);
+    let uiohook = Uiohook::new(event_handler);
 
-    let hook_thread = thread::spawn(move || {
-        if let Err(e) = uiohook_clone.run() {
-            eprintln!("Failed to run uiohook: {}", e);
-        }
-    });
+    if let Err(e) = uiohook.run() {
+        eprintln!("Failed to run uiohook: {}", e);
+        return;
+    }
 
     // Monitor the running flag in the main thread
     while running.load(Ordering::SeqCst) {
@@ -166,9 +164,6 @@ fn main() {
     if let Err(e) = uiohook.stop() {
         eprintln!("Failed to stop uiohook: {}", e);
     }
-
-    // Wait for the hook thread to finish
-    hook_thread.join().unwrap();
 
     // Restore original terminal settings
     termios::tcsetattr(stdin_fd, TCSANOW, &original_termios).unwrap();

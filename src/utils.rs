@@ -46,7 +46,7 @@ impl From<bindings::screen_data> for ScreenData {
 ///
 /// # Examples
 ///
-/// ```no_run
+/// ```
 /// use uiohook_rs::utils::create_screen_info;
 ///
 /// match create_screen_info() {
@@ -85,7 +85,7 @@ pub fn create_screen_info() -> Result<Vec<ScreenData>> {
 ///
 /// # Examples
 ///
-/// ```no_run
+/// ```
 /// use uiohook_rs::utils::get_auto_repeat_rate;
 ///
 /// match get_auto_repeat_rate() {
@@ -114,7 +114,7 @@ pub fn get_auto_repeat_rate() -> Result<i64> {
 ///
 /// # Examples
 ///
-/// ```no_run
+/// ```
 /// use uiohook_rs::utils::get_auto_repeat_delay;
 ///
 /// match get_auto_repeat_delay() {
@@ -143,7 +143,7 @@ pub fn get_auto_repeat_delay() -> Result<i64> {
 ///
 /// # Examples
 ///
-/// ```no_run
+/// ```
 /// use uiohook_rs::utils::get_pointer_acceleration_multiplier;
 ///
 /// match get_pointer_acceleration_multiplier() {
@@ -172,7 +172,7 @@ pub fn get_pointer_acceleration_multiplier() -> Result<i64> {
 ///
 /// # Examples
 ///
-/// ```no_run
+/// ```
 /// use uiohook_rs::utils::get_pointer_acceleration_threshold;
 ///
 /// match get_pointer_acceleration_threshold() {
@@ -201,7 +201,7 @@ pub fn get_pointer_acceleration_threshold() -> Result<i64> {
 ///
 /// # Examples
 ///
-/// ```no_run
+/// ```
 /// use uiohook_rs::utils::get_pointer_sensitivity;
 ///
 /// match get_pointer_sensitivity() {
@@ -230,7 +230,7 @@ pub fn get_pointer_sensitivity() -> Result<i64> {
 ///
 /// # Examples
 ///
-/// ```no_run
+/// ```
 /// use uiohook_rs::utils::get_multi_click_time;
 ///
 /// match get_multi_click_time() {
