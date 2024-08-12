@@ -45,10 +45,11 @@ fn main() {
     }
     
     // Stop the hook
-    // if let Err(e) = uiohook.stop() {
-    //     eprintln!("Error: {}", e);
-    // }
+    if let Err(e) = uiohook.stop() {
+        eprintln!("Error: {}", e);
+    }
 }
+```
 
 ## Running the Demo
 
