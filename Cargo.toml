@@ -1,6 +1,6 @@
 [package]
 name = "uiohook-rs"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 description = "uiohook-rs is a Rust wrapper for the libuiohook, providing cross-platform keyboard and mouse hooking capabilities."
 license = "GPL-3.0"
@@ -10,12 +10,10 @@ keywords = ["uiohook", "libuiohook", "keyboard", "mouse", "wheel"]
 
 [dependencies]
 libc = "0.2"
-lazy_static = "1.5"
 colored = "2.1"
 termios = "0.3"
 ctrlc = "3.4"
 thiserror = "1.0"
-rand = "0.8"
 
 [build-dependencies]
 bindgen = "0.69"
