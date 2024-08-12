@@ -12,15 +12,6 @@
 
 **IMPORTANT**: This crate has not been tested on `MacOS` and `Windows` yet, please report any issues you encounter (likely to be compilation issues related to dependencies).
 
-## Installation
-
-Add this to your `Cargo.toml`:
-
-```toml
-[dependencies]
-uiohook-rs = "0.1.0"
-```
-
 ## Usage
 
 Here's a basic example of how to use `uiohook-rs`:
