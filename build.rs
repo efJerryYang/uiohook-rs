@@ -37,6 +37,9 @@ fn main() {
                 .file(libuiohook_dir.join("src/darwin/post_event.c"))
                 .file(libuiohook_dir.join("src/darwin/system_properties.c"))
                 .file(libuiohook_dir.join("src/darwin/input_helper.c"));
+
+                println!("cargo:rustc-link-lib=framework=CoreFoundation");
+                println!("cargo:rustc-link-lib=framework=CoreGraphics");
         }
         "windows" => {
             build
