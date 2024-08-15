@@ -1,11 +1,8 @@
 use colored::*;
-use std::io::stdin;
-use std::os::unix::io::AsRawFd;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::thread;
 use std::time::Duration;
-use termios::{Termios, ECHO, ICANON, TCSANOW};
 use uiohook_rs::hook::keyboard::{KeyboardEvent, KeyboardEventType};
 use uiohook_rs::hook::mouse::{MouseEvent, MouseEventType};
 use uiohook_rs::hook::wheel::WheelEvent;
@@ -129,13 +126,6 @@ fn main() {
     let running = Arc::new(AtomicBool::new(true));
     let r = running.clone();
 
-    // Disable terminal echo to provide a cleaner output
-    let stdin_fd = stdin().as_raw_fd();
-    let mut termios = Termios::from_fd(stdin_fd).unwrap();
-    let original_termios = termios.clone();
-    termios.c_lflag &= !(ECHO | ICANON);
-    termios::tcsetattr(stdin_fd, TCSANOW, &termios).unwrap();
-
     println!("Press Ctrl-C to exit");
 
     // Set up Ctrl-C handler
@@ -164,9 +154,6 @@ fn main() {
     if let Err(e) = uiohook.stop() {
         eprintln!("Failed to stop uiohook: {}", e);
     }
-
-    // Restore original terminal settings
-    termios::tcsetattr(stdin_fd, TCSANOW, &original_termios).unwrap();
 
     println!("Exiting...");
 }
