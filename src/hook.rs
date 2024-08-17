@@ -10,7 +10,7 @@ use self::mouse::MouseEvent;
 use self::wheel::WheelEvent;
 // use std::ptr::addr_of_mut;
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::{Arc, Mutex, Once};
+use std::sync::{Arc, RwLock, Once};
 use std::thread;
 
 pub mod keyboard;
@@ -18,7 +18,7 @@ pub mod mouse;
 pub mod wheel;
 
 static INIT: Once = Once::new();
-static mut GLOBAL_HANDLER: Option<Arc<Mutex<dyn EventHandler>>> = None;
+static mut GLOBAL_HANDLER: Option<Arc<RwLock<dyn EventHandler>>> = None;
 
 /// Trait for handling uiohook events.
 pub trait EventHandler: Send + Sync {
@@ -28,9 +28,9 @@ pub trait EventHandler: Send + Sync {
 
 /// Main struct for interacting with uiohook.
 pub struct Uiohook {
-    event_handler: Arc<Mutex<dyn EventHandler>>,
+    event_handler: Arc<RwLock<dyn EventHandler>>,
     running: Arc<AtomicBool>,
-    thread_handle: Mutex<Option<thread::JoinHandle<()>>>,
+    thread_handle: RwLock<Option<thread::JoinHandle<()>>>,
 }
 
 
@@ -58,9 +58,9 @@ impl Uiohook {
     /// ```
     pub fn new<H: EventHandler + 'static>(event_handler: H) -> Self {
         Self {
-            event_handler: Arc::new(Mutex::new(event_handler)),
+            event_handler: Arc::new(RwLock::new(event_handler)),
             running: Arc::new(AtomicBool::new(false)),
-            thread_handle: Mutex::new(None),
+            thread_handle: RwLock::new(None),
         }
     }
 
@@ -111,7 +111,7 @@ impl Uiohook {
             }
         });
 
-        *self.thread_handle.lock().unwrap() = Some(thread);
+        *self.thread_handle.write().unwrap() = Some(thread);
 
         Ok(())
     }
@@ -154,7 +154,7 @@ impl Uiohook {
 
         let result = unsafe { bindings::hook_stop() };
 
-        if let Some(thread) = self.thread_handle.lock().unwrap().take() {
+        if let Some(thread) = self.thread_handle.write().unwrap().take() {
             thread.join().map_err(|_| UiohookError::Failure)?;
         }
 
@@ -347,7 +347,7 @@ unsafe extern "C" fn dispatch_proc_wrapper(event: *mut bindings::uiohook_event) 
 fn dispatch_proc(event: &bindings::uiohook_event) {
     if let Some(handler) = unsafe { GLOBAL_HANDLER.as_ref() } {
         let event = UiohookEvent::from_raw_event(event);
-        if let Ok(guard) = handler.lock() {
+        if let Ok(guard) = handler.read() {
             guard.handle_event(&event);
         }
     }
