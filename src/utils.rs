@@ -96,7 +96,7 @@ pub fn create_screen_info() -> Result<Vec<ScreenData>> {
 pub fn get_auto_repeat_rate() -> Result<i64> {
     let rate = unsafe { bindings::hook_get_auto_repeat_rate() };
     if rate >= 0 {
-        Ok(rate)
+        Ok(rate as i64)
     } else {
         Err(UiohookError::Unknown(rate as u32))
     }
@@ -125,7 +125,7 @@ pub fn get_auto_repeat_rate() -> Result<i64> {
 pub fn get_auto_repeat_delay() -> Result<i64> {
     let delay = unsafe { bindings::hook_get_auto_repeat_delay() };
     if delay >= 0 {
-        Ok(delay)
+        Ok(delay as i64)
     } else {
         Err(UiohookError::Unknown(delay as u32))
     }
@@ -154,7 +154,7 @@ pub fn get_auto_repeat_delay() -> Result<i64> {
 pub fn get_pointer_acceleration_multiplier() -> Result<i64> {
     let multiplier = unsafe { bindings::hook_get_pointer_acceleration_multiplier() };
     if multiplier >= 0 {
-        Ok(multiplier)
+        Ok(multiplier as i64)
     } else {
         Err(UiohookError::Unknown(multiplier as u32))
     }
@@ -183,7 +183,7 @@ pub fn get_pointer_acceleration_multiplier() -> Result<i64> {
 pub fn get_pointer_acceleration_threshold() -> Result<i64> {
     let threshold = unsafe { bindings::hook_get_pointer_acceleration_threshold() };
     if threshold >= 0 {
-        Ok(threshold)
+        Ok(threshold as i64)
     } else {
         Err(UiohookError::Unknown(threshold as u32))
     }
@@ -212,7 +212,7 @@ pub fn get_pointer_acceleration_threshold() -> Result<i64> {
 pub fn get_pointer_sensitivity() -> Result<i64> {
     let sensitivity = unsafe { bindings::hook_get_pointer_sensitivity() };
     if sensitivity >= 0 {
-        Ok(sensitivity)
+        Ok(sensitivity as i64)
     } else {
         Err(UiohookError::Unknown(sensitivity as u32))
     }
@@ -241,7 +241,7 @@ pub fn get_pointer_sensitivity() -> Result<i64> {
 pub fn get_multi_click_time() -> Result<i64> {
     let time = unsafe { bindings::hook_get_multi_click_time() };
     if time >= 0 {
-        Ok(time)
+        Ok(time as i64)
     } else {
         Err(UiohookError::Unknown(time as u32))
     }
