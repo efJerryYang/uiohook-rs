@@ -21,3 +21,6 @@ core-foundation = "0.10"
 bindgen = "0.69"
 cc = "1.0"
 pkg-config = "0.3"
+
+[features]
+nightly = []

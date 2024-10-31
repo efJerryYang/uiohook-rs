@@ -34,13 +34,14 @@
 //! }
 //! ```
 
-
+#![feature(c_variadic)]
 #![allow(missing_docs)]
 
 mod bindings;
 pub mod hook;
 pub mod error;
 pub mod utils;
+pub mod logger;
 // pub mod legacy;
 
 // Re-export the main components
@@ -79,6 +80,10 @@ pub use bindings::{
     UIOHOOK_ERROR_CREATE_RUN_LOOP_SOURCE,
     UIOHOOK_ERROR_GET_RUNLOOP,
     UIOHOOK_ERROR_CREATE_OBSERVER,
+    _log_level_LOG_LEVEL_DEBUG as LOG_LEVEL_DEBUG,
+    _log_level_LOG_LEVEL_INFO as LOG_LEVEL_INFO,
+    _log_level_LOG_LEVEL_WARN as LOG_LEVEL_WARN,
+    _log_level_LOG_LEVEL_ERROR as LOG_LEVEL_ERROR,
 };
 
 // Re-export key codes

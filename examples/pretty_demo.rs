@@ -6,6 +6,9 @@ use uiohook_rs::hook::mouse::{MouseEvent, MouseEventType};
 use uiohook_rs::hook::wheel::WheelEvent;
 use uiohook_rs::{EventHandler, Uiohook, UiohookEvent};
 
+#[cfg(feature = "nightly")]
+use uiohook_rs::logger::init_logger;
+
 struct DemoEventHandler {
     running: Arc<AtomicBool>,
 }
@@ -131,6 +134,9 @@ fn main() {
 
     println!("Press Ctrl-C to exit");
 
+    #[cfg(feature = "nightly")]
+    init_logger();
+    // Set up Ctrl-C handler
     ctrlc::set_handler(move || {
         r.store(false, Ordering::SeqCst);
         #[cfg(target_os = "macos")]
