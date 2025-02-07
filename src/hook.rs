@@ -3,22 +3,21 @@
 //! This module provides the main `Uiohook` struct and the `EventHandler` trait
 //! for handling uiohook events.
 
-use crate::{bindings, KeyboardEventType, MouseEventType};
-use crate::error::UiohookError;
 use self::keyboard::KeyboardEvent;
 use self::mouse::MouseEvent;
 use self::wheel::WheelEvent;
-// use std::ptr::addr_of_mut;
+use crate::error::UiohookError;
+use crate::{bindings, KeyboardEventType, MouseEventType};
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::{Arc, RwLock, Once};
+use std::sync::{Arc, OnceLock, RwLock};
 use std::thread;
 
 pub mod keyboard;
 pub mod mouse;
 pub mod wheel;
 
-static INIT: Once = Once::new();
-static mut GLOBAL_HANDLER: Option<Arc<RwLock<dyn EventHandler>>> = None;
+// Only initialize the event handler once globally (global hooks are only allowed to be set once)
+static GLOBAL_HANDLER: OnceLock<Arc<RwLock<dyn EventHandler>>> = OnceLock::new();
 
 /// Trait for handling uiohook events.
 pub trait EventHandler: Send + Sync {
@@ -32,7 +31,6 @@ pub struct Uiohook {
     running: Arc<AtomicBool>,
     thread_handle: RwLock<Option<thread::JoinHandle<()>>>,
 }
-
 
 impl Uiohook {
     /// Create a new Uiohook instance with the given event handler.
@@ -64,7 +62,7 @@ impl Uiohook {
         }
     }
 
-     /// Run the uiohook event loop.
+    /// Run the uiohook event loop.
     ///
     /// This method will block until `stop()` is called or an error occurs.
     ///
@@ -93,11 +91,12 @@ impl Uiohook {
             return Err(UiohookError::AlreadyRunning);
         }
 
-        INIT.call_once(|| {
+        // Use `get_or_init` to ensure the once initialization
+        GLOBAL_HANDLER.get_or_init(|| {
             unsafe {
-                GLOBAL_HANDLER = Some(Arc::clone(&self.event_handler));
                 bindings::hook_set_dispatch_proc(Some(dispatch_proc_wrapper));
             }
+            Arc::clone(&self.event_handler)
         });
 
         let running = self.running.clone();
@@ -112,12 +111,11 @@ impl Uiohook {
         });
 
         *self.thread_handle.write().unwrap() = Some(thread);
-
         Ok(())
     }
 
     /// Stop the uiohook event loop.
-    ///
+    /// 
     /// # Errors
     ///
     /// Returns a `UiohookError` if the hook fails to stop.
@@ -165,7 +163,6 @@ impl Uiohook {
         }
     }
 
-    
     /// Post a synthetic event.
     ///
     /// # Arguments
@@ -233,7 +230,6 @@ pub enum UiohookEvent {
     HookDisabled,
 }
 
-
 impl UiohookEvent {
     fn from_raw_event(event: &bindings::uiohook_event) -> Self {
         use bindings::event_type::*;
@@ -282,7 +278,6 @@ impl UiohookEvent {
     fn create_wheel_event(event: &bindings::uiohook_event) -> WheelEvent {
         WheelEvent::from(unsafe { &event.data.wheel })
     }
-
 
     fn to_raw_event(&self) -> bindings::uiohook_event {
         use bindings::event_type::*;
@@ -336,7 +331,7 @@ impl UiohookEvent {
 
 impl From<&bindings::uiohook_event> for UiohookEvent {
     fn from(event: &bindings::uiohook_event) -> Self {
-        UiohookEvent::from_raw_event(&event)
+        UiohookEvent::from_raw_event(event)
     }
 }
 
@@ -345,7 +340,7 @@ unsafe extern "C" fn dispatch_proc_wrapper(event: *mut bindings::uiohook_event) 
 }
 
 fn dispatch_proc(event: &bindings::uiohook_event) {
-    if let Some(handler) = unsafe { GLOBAL_HANDLER.as_ref() } {
+    if let Some(handler) = GLOBAL_HANDLER.get() {
         let event = UiohookEvent::from_raw_event(event);
         if let Ok(guard) = handler.read() {
             guard.handle_event(&event);
@@ -356,7 +351,8 @@ fn dispatch_proc(event: &bindings::uiohook_event) {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
+    use std::sync::atomic::{AtomicUsize, Ordering};
+    use std::sync::Arc;
     use std::time::Duration;
 
     struct TestHandler {
@@ -371,12 +367,11 @@ mod tests {
 
     #[test]
     fn test_uiohook_run_and_stop() {
-        let running = Arc::new(AtomicBool::new(true));
         let event_count = Arc::new(AtomicUsize::new(0));
-        let handler = TestHandler { 
+        let handler = TestHandler {
             event_count: event_count.clone(),
         };
-        
+
         let hook = Uiohook::new(handler);
 
         // Run the hook
@@ -384,7 +379,7 @@ mod tests {
             panic!("Failed to run uiohook: {}", e);
         }
 
-        // Wait for the hook to start
+        // Wait a short while for the hook to start
         std::thread::sleep(Duration::from_millis(100));
 
         // Post a test event
@@ -403,10 +398,8 @@ mod tests {
         assert_eq!(event_count.load(Ordering::SeqCst), 1, "Event was not processed");
 
         // Stop the hook
-        running.store(false, Ordering::SeqCst);
         hook.stop().expect("Failed to stop uiohook");
 
-        // Ensure the hook has stopped
         std::thread::sleep(Duration::from_millis(100));
     }
 }
