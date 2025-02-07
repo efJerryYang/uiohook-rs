@@ -27,13 +27,13 @@ pub struct WheelEvent {
 impl From<&bindings::mouse_wheel_event_data> for WheelEvent {
     fn from(event: &bindings::mouse_wheel_event_data) -> Self {
         WheelEvent {
-            clicks: event.clicks as u16,
+            clicks: event.clicks,
             x: event.x,
             y: event.y,
-            type_: event.type_ as u8,
-            amount: event.amount as u16,
+            type_: event.type_,
+            amount: event.amount,
             rotation: event.rotation,
-            direction: event.direction as u8,
+            direction: event.direction,
         }
     }
 }
