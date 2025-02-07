@@ -10,7 +10,7 @@ use self::mouse::MouseEvent;
 use self::wheel::WheelEvent;
 // use std::ptr::addr_of_mut;
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::{Arc, RwLock, Once};
+use std::sync::{Arc, RwLock, Once, OnceLock};
 use std::thread;
 
 pub mod keyboard;
@@ -18,7 +18,7 @@ pub mod mouse;
 pub mod wheel;
 
 static INIT: Once = Once::new();
-static mut GLOBAL_HANDLER: Option<Arc<RwLock<dyn EventHandler>>> = None;
+static GLOBAL_HANDLER: OnceLock<Arc<RwLock<dyn EventHandler>>> = OnceLock::new();
 
 /// Trait for handling uiohook events.
 pub trait EventHandler: Send + Sync {
@@ -95,7 +95,9 @@ impl Uiohook {
 
         INIT.call_once(|| {
             unsafe {
-                GLOBAL_HANDLER = Some(Arc::clone(&self.event_handler));
+                if GLOBAL_HANDLER.set(Arc::clone(&self.event_handler)).is_err() {
+                    eprintln!("Failed to set global handler");
+                }
                 bindings::hook_set_dispatch_proc(Some(dispatch_proc_wrapper));
             }
         });
@@ -345,7 +347,7 @@ unsafe extern "C" fn dispatch_proc_wrapper(event: *mut bindings::uiohook_event) 
 }
 
 fn dispatch_proc(event: &bindings::uiohook_event) {
-    if let Some(handler) = unsafe { GLOBAL_HANDLER.as_ref() } {
+    if let Some(handler) = GLOBAL_HANDLER.get() {
         let event = UiohookEvent::from_raw_event(event);
         if let Ok(guard) = handler.read() {
             guard.handle_event(&event);

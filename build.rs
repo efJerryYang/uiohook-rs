@@ -38,8 +38,8 @@ fn main() {
                 .file(libuiohook_dir.join("src/darwin/system_properties.c"))
                 .file(libuiohook_dir.join("src/darwin/input_helper.c"));
 
-                println!("cargo:rustc-link-lib=framework=CoreFoundation");
-                println!("cargo:rustc-link-lib=framework=CoreGraphics");
+            println!("cargo:rustc-link-lib=framework=CoreFoundation");
+            println!("cargo:rustc-link-lib=framework=CoreGraphics");
         }
         "windows" => {
             build
@@ -47,6 +47,8 @@ fn main() {
                 .file(libuiohook_dir.join("src/windows/post_event.c"))
                 .file(libuiohook_dir.join("src/windows/system_properties.c"))
                 .file(libuiohook_dir.join("src/windows/input_helper.c"));
+
+            println!("cargo:rustc-link-lib=user32");
         }
         _ => panic!("Unsupported operating system"),
     }
