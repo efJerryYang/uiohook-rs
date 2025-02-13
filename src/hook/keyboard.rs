@@ -487,7 +487,6 @@ impl From<KeyCode> for u32 {
 /// let hook = Uiohook::new(MyHandler);
 /// key_tap(&hook, KeyCode::A, &[KeyCode::ShiftL]).expect("Failed to tap key");
 /// ```
-
 pub fn key_tap(uiohook: &Uiohook, key: KeyCode, modifiers: &[KeyCode]) -> Result<(), UiohookError> {
     // 1. Create keyboard events for pressing modifiers
     for &modifier in modifiers {
