@@ -1,8 +1,6 @@
 use colored::*;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
-use std::thread;
-use std::time::Duration;
 use uiohook_rs::hook::keyboard::{KeyboardEvent, KeyboardEventType};
 use uiohook_rs::hook::mouse::{MouseEvent, MouseEventType};
 use uiohook_rs::hook::wheel::WheelEvent;
@@ -123,14 +121,25 @@ impl DemoEventHandler {
 }
 
 fn main() {
+    #[cfg(not(target_os = "macos"))]
+    use std::{thread, time::Duration};
+    #[cfg(target_os = "macos")]
+    use core_foundation::runloop::{CFRunLoopGetMain, CFRunLoopStop, CFRunLoopRun};
+
     let running = Arc::new(AtomicBool::new(true));
     let r = running.clone();
 
     println!("Press Ctrl-C to exit");
 
-    // Set up Ctrl-C handler
     ctrlc::set_handler(move || {
         r.store(false, Ordering::SeqCst);
+        #[cfg(target_os = "macos")]
+        {
+            println!("Ctrl-C pressed, stopping CFRunLoop...");
+            unsafe {
+                CFRunLoopStop(CFRunLoopGetMain());
+            }
+        }
     })
     .expect("Error setting Ctrl-C handler");
 
@@ -145,9 +154,18 @@ fn main() {
         return;
     }
 
-    // Monitor the running flag in the main thread
-    while running.load(Ordering::SeqCst) {
-        thread::sleep(Duration::from_millis(100));
+    #[cfg(target_os = "macos")]
+    {
+        println!("Starting CFRunLoopRun on macOS main thread...");
+        unsafe {
+            CFRunLoopRun();
+        }
+    }
+    #[cfg(not(target_os = "macos"))]
+    {
+        while running.load(Ordering::SeqCst) {
+            thread::sleep(Duration::from_millis(100));
+        }
     }
 
     // Stop uiohook

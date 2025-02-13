@@ -2,8 +2,8 @@
 //!
 //! This module defines the error types used throughout the uiohook-rs crate.
 
-use thiserror::Error;
 use std::result;
+use thiserror::Error;
 
 /// A specialized Result type for uiohook operations.
 pub type Result<T> = result::Result<T, UiohookError>;

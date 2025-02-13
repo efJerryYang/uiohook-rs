@@ -54,6 +54,25 @@ impl WheelEvent {
     /// # Returns
     ///
     /// A new `WheelEvent` instance.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use uiohook_rs::hook::wheel::WheelEvent;
+    /// use uiohook_rs::hook::wheel::WHEEL_VERTICAL_DIRECTION;
+    /// use uiohook_rs::bindings;
+    ///
+    /// let wheel_event = WheelEvent::new(
+    ///     1,
+    ///     100,
+    ///     200,
+    ///     bindings::WHEEL_UNIT_SCROLL as u8,
+    ///     3,
+    ///     -120,
+    ///     WHEEL_VERTICAL_DIRECTION,
+    /// );
+    /// assert_eq!(wheel_event.clicks, 1);
+    /// ```
     pub fn new(clicks: u16, x: i16, y: i16, type_: u8, amount: u16, rotation: i16, direction: u8) -> Self {
         WheelEvent {
             clicks,

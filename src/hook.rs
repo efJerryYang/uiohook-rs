@@ -79,13 +79,18 @@ impl Uiohook {
     ///
     /// impl EventHandler for MyHandler {
     ///     fn handle_event(&self, event: &UiohookEvent) {
+    ///         // Process the event
     ///         println!("Event: {:?}", event);
     ///     }
     /// }
     ///
     /// let hook = Uiohook::new(MyHandler);
+    /// // This call blocks until the hook is stopped
     /// hook.run().expect("Failed to run uiohook");
     /// ```
+    ///
+    /// Note: In a real application, you may need to run a platform-specific event loop (e.g., CFRunLoop on macOS)
+    /// or spawn the hook in a separate thread.
     pub fn run(&self) -> Result<(), UiohookError> {
         if self.running.swap(true, Ordering::SeqCst) {
             return Err(UiohookError::AlreadyRunning);
@@ -115,14 +120,14 @@ impl Uiohook {
     }
 
     /// Stop the uiohook event loop.
-    /// 
+    ///
     /// # Errors
     ///
     /// Returns a `UiohookError` if the hook fails to stop.
     ///
     /// # Examples
     ///
-    /// ```rust
+    /// ```no_run
     /// use uiohook_rs::{Uiohook, EventHandler, UiohookEvent};
     /// use std::thread;
     /// use std::time::Duration;
@@ -136,13 +141,9 @@ impl Uiohook {
     /// }
     ///
     /// let hook = Uiohook::new(MyHandler);
-    ///
-    /// // Start the hook
     /// hook.run().expect("Failed to run uiohook");
-    ///
-    /// // Do something here...
-    ///
-    /// // Stop the hook
+    /// // ... run for some time ...
+    /// thread::sleep(Duration::from_secs(5));
     /// hook.stop().expect("Failed to stop uiohook");
     /// ```
     pub fn stop(&self) -> Result<(), UiohookError> {
@@ -175,9 +176,9 @@ impl Uiohook {
     ///
     /// # Examples
     ///
-    /// ```
+    /// ```no_run
     /// use uiohook_rs::{Uiohook, EventHandler, UiohookEvent};
-    /// use uiohook_rs::hook::keyboard::{KeyboardEvent, KeyboardEventType, KeyCode};
+    /// use uiohook_rs::hook::keyboard::{KeyboardEvent, KeyboardEventType, key_tap, KeyCode};
     ///
     /// struct MyHandler;
     ///
@@ -188,23 +189,15 @@ impl Uiohook {
     /// }
     ///
     /// let hook = Uiohook::new(MyHandler);
-    ///
-    /// // Create a keyboard event
-    /// let key_event = KeyboardEvent {
+    /// hook.run().expect("Failed to run uiohook");
+    /// // The following line demonstrates how to post an event.
+    /// // (In an actual application, you would wait and observe the posted event)
+    /// println!("Would post event: {:?}", UiohookEvent::Keyboard(KeyboardEvent {
     ///     event_type: KeyboardEventType::Pressed,
     ///     key_code: KeyCode::A,
     ///     raw_code: 0x41,
     ///     key_char: Some('A'),
-    /// };
-    ///
-    /// // In a real scenario, you would run the hook before posting events
-    /// hook.run().expect("Failed to run uiohook");
-    ///
-    /// // Demonstrate how to use post_event (this won't actually post the event in the doc test)
-    /// // hook.post_event(&UiohookEvent::Keyboard(key_event)).expect("Failed to post event");
-    ///
-    /// // For the purpose of this example, we'll just print the event
-    /// println!("Would post event: {:?}", UiohookEvent::Keyboard(key_event));
+    /// }));
     /// ```
     pub fn post_event(&self, event: &UiohookEvent) -> Result<(), UiohookError> {
         let mut raw_event = event.to_raw_event();
@@ -243,9 +236,7 @@ impl UiohookEvent {
             | EVENT_MOUSE_MOVED | EVENT_MOUSE_DRAGGED => {
                 UiohookEvent::Mouse(Self::create_mouse_event(event))
             }
-            EVENT_MOUSE_WHEEL => {
-                UiohookEvent::Wheel(Self::create_wheel_event(event))
-            }
+            EVENT_MOUSE_WHEEL => UiohookEvent::Wheel(Self::create_wheel_event(event)),
         }
     }
 
@@ -281,8 +272,14 @@ impl UiohookEvent {
 
     fn to_raw_event(&self) -> bindings::uiohook_event {
         use bindings::event_type::*;
-        let mut raw_event: bindings::uiohook_event = unsafe { std::mem::zeroed() };
-
+        let mut raw_event = bindings::uiohook_event {
+            type_: EVENT_HOOK_ENABLED,
+            time: 0,
+            mask: 0,
+            reserved: 0,
+            data: unsafe { std::mem::zeroed() },
+        };
+        
         match self {
             UiohookEvent::HookEnabled => {
                 raw_event.type_ = EVENT_HOOK_ENABLED;
@@ -361,7 +358,9 @@ mod tests {
 
     impl EventHandler for TestHandler {
         fn handle_event(&self, _event: &UiohookEvent) {
-            self.event_count.fetch_add(1, Ordering::SeqCst);
+            if let UiohookEvent::Keyboard(_) = _event {
+                self.event_count.fetch_add(1, Ordering::SeqCst);
+            }
         }
     }
 

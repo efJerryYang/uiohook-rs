@@ -1,8 +1,3 @@
-//! uiohook-rs: Rust bindings for libuiohook
-//!
-//! This library provides a safe Rust interface to the libuiohook C library,
-//! allowing for cross-platform keyboard and mouse event hooking.
-//!
 //! # Example
 //!
 //! ```rust,no_run
@@ -30,16 +25,12 @@
 //!     };
 //!     let uiohook = Uiohook::new(event_handler);
 //!
-//!     if let Err(e) = uiohook.run() {
-//!         eprintln!("Failed to run uiohook: {}", e);
-//!         return;
-//!     }
+//!     uiohook.run().expect("Failed to run uiohook");
 //!
+//!     // Let the hook run for 5 seconds (in a real application, run a platform-specific event loop)
 //!     thread::sleep(Duration::from_secs(5));
 //!
-//!     if let Err(e) = uiohook.stop() {
-//!         eprintln!("Failed to stop uiohook: {}", e);
-//!     }
+//!     uiohook.stop().expect("Failed to stop uiohook");
 //! }
 //! ```
 

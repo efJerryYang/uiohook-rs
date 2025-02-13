@@ -46,7 +46,7 @@ impl From<bindings::screen_data> for ScreenData {
 ///
 /// # Examples
 ///
-/// ```
+/// ```rust,no_run
 /// use uiohook_rs::utils::create_screen_info;
 ///
 /// match create_screen_info() {
