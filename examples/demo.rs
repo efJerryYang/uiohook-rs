@@ -161,7 +161,7 @@ fn main() {
     #[cfg(not(target_os = "macos"))]
     {
         while running.load(Ordering::SeqCst) {
-            std::thread::sleep(time::Duration::from_millis(100));
+            std::thread::sleep(std::time::Duration::from_millis(100));
         }
     }
 
