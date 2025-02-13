@@ -10,7 +10,8 @@
 - Low-level keyboard and mouse event handling
 - Easy-to-use Rust API
 
-**IMPORTANT**: This crate has not been tested on `MacOS` and `Windows` yet, please report any issues you encounter (likely to be compilation issues related to dependencies).
+**Note**: All examples have now been tested on macOS, Windows and Linux.  
+On macOS the examples have been updated to use the `CoreFoundation` run loop (`CFRunLoop`) for proper event dispatch and exit.
 
 ## Usage
 

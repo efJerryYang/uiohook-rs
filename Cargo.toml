@@ -13,7 +13,7 @@ libc = "0.2"
 colored = "2.1"
 ctrlc = "3.4"
 thiserror = "1.0"
-core-foundation = "0.10.0"
+core-foundation = "0.10"
 
 [build-dependencies]
 bindgen = "0.69"
