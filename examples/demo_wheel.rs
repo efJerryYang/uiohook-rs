@@ -45,6 +45,20 @@ fn main() {
 
     if let Err(e) = uiohook.run() {
         eprintln!("Failed to run uiohook: {}", e);
+        return;
+    }
+
+    #[cfg(target_os = "macos")]
+    {
+        unsafe {
+            core_foundation::runloop::CFRunLoopRun();
+        }
+    }
+    #[cfg(not(target_os = "macos"))]
+    {
+        loop {
+            std::thread::sleep(std::time::Duration::from_millis(100));
+        }
     }
 
     println!("Exiting...");

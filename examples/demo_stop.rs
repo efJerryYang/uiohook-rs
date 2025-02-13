@@ -31,8 +31,25 @@ fn main() {
         return;
     }
 
-    // Run for 5 seconds
-    thread::sleep(Duration::from_secs(5));
+    #[cfg(target_os = "macos")]
+    {
+        use core_foundation::runloop::{CFRunLoopGetMain, CFRunLoopStop, CFRunLoopRun};
+        thread::spawn(|| {
+            thread::sleep(Duration::from_secs(5));
+            println!("Stopping CFRunLoop...");
+            unsafe {
+                CFRunLoopStop(CFRunLoopGetMain());
+            }
+        });
+        println!("Starting CFRunLoopRun on macOS main thread...");
+        unsafe {
+            CFRunLoopRun();
+        }
+    }
+    #[cfg(not(target_os = "macos"))]
+    {
+        thread::sleep(Duration::from_secs(5));
+    }
 
     // Stop uiohook
     println!("Stopping uiohook...");
