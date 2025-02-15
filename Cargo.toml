@@ -13,6 +13,8 @@ libc = "0.2"
 colored = "2.1"
 ctrlc = "3.4"
 thiserror = "1.0"
+
+[target.'cfg(target_os = "macos")'.dependencies]
 core-foundation = "0.10"
 
 [build-dependencies]
