@@ -1,6 +1,6 @@
 [package]
 name = "uiohook-rs"
-version = "0.2.5"
+version = "0.2.6"
 edition = "2021"
 description = "uiohook-rs is a Rust wrapper for the libuiohook, providing cross-platform keyboard and mouse hooking capabilities."
 license = "GPL-3.0"
