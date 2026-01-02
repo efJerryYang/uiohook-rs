@@ -9,5 +9,6 @@
 #![allow(non_snake_case)]
 #![allow(dead_code)]
 #![allow(unused_imports)]
+#![allow(unpredictable_function_pointer_comparisons)] // TODO: temporarily allow to suppress warnings from bindgen
 
 include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
